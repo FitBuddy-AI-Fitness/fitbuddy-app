@@ -115,10 +115,17 @@ jobs:
             echo "TAG=v1.0.${{ github.run_number }}" >> $GITHUB_ENV
           fi
 
-      - name: Update Helm Chart Image Tags
+      - name: Update Helm Chart Image Tags (DEV)
+        if: github.ref == 'refs/heads/develop'
         working-directory: ./argocd-repo
         run: |
-          sed -i -E "s/tag: .*/tag: ${{ env.TAG }}/g" charts/*/values.yaml
+          sed -i -E "s/tag: .*/tag: ${{ env.TAG }}/g" charts/*/values-dev.yaml
+
+      - name: Update Helm Chart Image Tags (PROD)
+        if: github.ref == 'refs/heads/main'
+        working-directory: ./argocd-repo
+        run: |
+          sed -i -E "s/tag: .*/tag: ${{ env.TAG }}/g" charts/*/values-prod.yaml
 
       - name: Commit and Push Changes
         working-directory: ./argocd-repo
