@@ -1,0 +1,8 @@
+﻿apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fitbuddy-config-auth-service
+  namespace: production
+data:
+  ENVIRONMENT: "production"
+  NODE_ENV: "production"

@@ -1,0 +1,50 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fitbuddy-auth-service
+  namespace: production
+  labels:
+    app: fitbuddy-auth-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fitbuddy-auth-service
+  template:
+    metadata:
+      labels:
+        app: fitbuddy-auth-service
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: fitbuddy-sa-auth-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: auth-service
+          image: "aravindacr.azurecr.io/fitbuddy-auth-service:latest"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          envFrom:
+            - configMapRef:
+                name: fitbuddy-config-auth-service
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3001
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 5
