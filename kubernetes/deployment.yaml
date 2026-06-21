@@ -17,9 +17,6 @@ spec:
         azure.workload.identity/use: "true"
     spec:
       serviceAccountName: fitbuddy-sa-auth-service
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
       containers:
         - name: auth-service
           image: "aravindacr.azurecr.io/fitbuddy-"
@@ -68,9 +65,6 @@ spec:
         azure.workload.identity/use: "true"
     spec:
       serviceAccountName: fitbuddy-sa-chatbot-service
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
       containers:
         - name: chatbot-service
           image: "aravindacr.azurecr.io/fitbuddy-"
@@ -119,9 +113,6 @@ spec:
         azure.workload.identity/use: "true"
     spec:
       serviceAccountName: fitbuddy-sa-diet-service
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
       containers:
         - name: diet-service
           image: "aravindacr.azurecr.io/fitbuddy-"
@@ -170,9 +161,6 @@ spec:
         azure.workload.identity/use: "true"
     spec:
       serviceAccountName: fitbuddy-sa-progress-service
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
       containers:
         - name: progress-service
           image: "aravindacr.azurecr.io/fitbuddy-"
@@ -221,9 +209,6 @@ spec:
         azure.workload.identity/use: "true"
     spec:
       serviceAccountName: fitbuddy-sa-user-service
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
       containers:
         - name: user-service
           image: "aravindacr.azurecr.io/fitbuddy-"
@@ -272,9 +257,6 @@ spec:
         azure.workload.identity/use: "true"
     spec:
       serviceAccountName: fitbuddy-sa-workout-service
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
       containers:
         - name: workout-service
           image: "aravindacr.azurecr.io/fitbuddy-"
@@ -323,9 +305,6 @@ spec:
         azure.workload.identity/use: "true"
     spec:
       serviceAccountName: fitbuddy-sa-yolo-exercise-service
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
       containers:
         - name: yolo-exercise-service
           image: "aravindacr.azurecr.io/fitbuddy-"
@@ -374,9 +353,6 @@ spec:
         azure.workload.identity/use: "true"
     spec:
       serviceAccountName: fitbuddy-sa-frontend
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
       containers:
         - name: frontend
           image: "aravindacr.azurecr.io/fitbuddy-"
@@ -405,3 +381,4 @@ spec:
               port: 80
             initialDelaySeconds: 10
             periodSeconds: 5
+
