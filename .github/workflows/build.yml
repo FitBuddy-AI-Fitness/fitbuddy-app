@@ -115,10 +115,10 @@ jobs:
             echo "TAG=v1.0.${{ github.run_number }}" >> $GITHUB_ENV
           fi
 
-      - name: Update Kubernetes Manifests for ArgoCD
+      - name: Update Helm Chart Image Tags
         working-directory: ./argocd-repo
         run: |
-          find ./k8s -name "*.yaml" -type f -exec sed -i "s|${{ secrets.ACR_LOGIN_SERVER }}/fitbuddy-\(.*\):[a-zA-Z0-9.-]*|${{ secrets.ACR_LOGIN_SERVER }}/fitbuddy-\1:${{ env.TAG }}|g" {} +
+          sed -i -E "s/tag: .*/tag: ${{ env.TAG }}/g" charts/fitbuddy-microservices/values.yaml
 
       - name: Commit and Push Changes
         working-directory: ./argocd-repo
