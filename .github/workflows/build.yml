@@ -118,7 +118,7 @@ jobs:
       - name: Update Helm Chart Image Tags
         working-directory: ./argocd-repo
         run: |
-          sed -i -E "s/tag: .*/tag: ${{ env.TAG }}/g" charts/fitbuddy-microservices/values.yaml
+          sed -i -E "s/tag: .*/tag: ${{ env.TAG }}/g" charts/*/values.yaml
 
       - name: Commit and Push Changes
         working-directory: ./argocd-repo
