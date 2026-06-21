@@ -6,3 +6,66 @@ metadata:
 data:
   ENVIRONMENT: "production"
   NODE_ENV: "production"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fitbuddy-config-chatbot-service
+  namespace: production
+data:
+  ENVIRONMENT: "production"
+  NODE_ENV: "production"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fitbuddy-config-diet-service
+  namespace: production
+data:
+  ENVIRONMENT: "production"
+  NODE_ENV: "production"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fitbuddy-config-progress-service
+  namespace: production
+data:
+  ENVIRONMENT: "production"
+  NODE_ENV: "production"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fitbuddy-config-user-service
+  namespace: production
+data:
+  ENVIRONMENT: "production"
+  NODE_ENV: "production"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fitbuddy-config-workout-service
+  namespace: production
+data:
+  ENVIRONMENT: "production"
+  NODE_ENV: "production"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fitbuddy-config-yolo-exercise-service
+  namespace: production
+data:
+  ENVIRONMENT: "production"
+  NODE_ENV: "production"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fitbuddy-config-frontend
+  namespace: production
+data:
+  ENVIRONMENT: "production"
+  NODE_ENV: "production"

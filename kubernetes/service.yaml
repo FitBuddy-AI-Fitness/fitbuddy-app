@@ -6,9 +6,122 @@ metadata:
   labels:
     app: fitbuddy-auth-service
 spec:
+  type: ClusterIP
   selector:
     app: fitbuddy-auth-service
   ports:
     - protocol: TCP
       port: 80
       targetPort: 3001
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fitbuddy-chatbot-service
+  namespace: production
+  labels:
+    app: fitbuddy-chatbot-service
+spec:
+  type: ClusterIP
+  selector:
+    app: fitbuddy-chatbot-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3002
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fitbuddy-diet-service
+  namespace: production
+  labels:
+    app: fitbuddy-diet-service
+spec:
+  type: ClusterIP
+  selector:
+    app: fitbuddy-diet-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3003
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fitbuddy-progress-service
+  namespace: production
+  labels:
+    app: fitbuddy-progress-service
+spec:
+  type: ClusterIP
+  selector:
+    app: fitbuddy-progress-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3004
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fitbuddy-user-service
+  namespace: production
+  labels:
+    app: fitbuddy-user-service
+spec:
+  type: ClusterIP
+  selector:
+    app: fitbuddy-user-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3005
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fitbuddy-workout-service
+  namespace: production
+  labels:
+    app: fitbuddy-workout-service
+spec:
+  type: ClusterIP
+  selector:
+    app: fitbuddy-workout-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3006
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fitbuddy-yolo-exercise-service
+  namespace: production
+  labels:
+    app: fitbuddy-yolo-exercise-service
+spec:
+  type: ClusterIP
+  selector:
+    app: fitbuddy-yolo-exercise-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fitbuddy-frontend
+  namespace: production
+  labels:
+    app: fitbuddy-frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: fitbuddy-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

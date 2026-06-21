@@ -22,7 +22,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: auth-service
-          image: "aravindacr.azurecr.io/fitbuddy-auth-service:latest"
+          image: "aravindacr.azurecr.io/fitbuddy-"
           imagePullPolicy: Always
           ports:
             - containerPort: 3001
@@ -46,5 +46,362 @@ spec:
             httpGet:
               path: /ready
               port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fitbuddy-chatbot-service
+  namespace: production
+  labels:
+    app: fitbuddy-chatbot-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fitbuddy-chatbot-service
+  template:
+    metadata:
+      labels:
+        app: fitbuddy-chatbot-service
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: fitbuddy-sa-chatbot-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: chatbot-service
+          image: "aravindacr.azurecr.io/fitbuddy-"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3002
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          envFrom:
+            - configMapRef:
+                name: fitbuddy-config-chatbot-service
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3002
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3002
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fitbuddy-diet-service
+  namespace: production
+  labels:
+    app: fitbuddy-diet-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fitbuddy-diet-service
+  template:
+    metadata:
+      labels:
+        app: fitbuddy-diet-service
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: fitbuddy-sa-diet-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: diet-service
+          image: "aravindacr.azurecr.io/fitbuddy-"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3003
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          envFrom:
+            - configMapRef:
+                name: fitbuddy-config-diet-service
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3003
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3003
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fitbuddy-progress-service
+  namespace: production
+  labels:
+    app: fitbuddy-progress-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fitbuddy-progress-service
+  template:
+    metadata:
+      labels:
+        app: fitbuddy-progress-service
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: fitbuddy-sa-progress-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: progress-service
+          image: "aravindacr.azurecr.io/fitbuddy-"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3004
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          envFrom:
+            - configMapRef:
+                name: fitbuddy-config-progress-service
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3004
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3004
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fitbuddy-user-service
+  namespace: production
+  labels:
+    app: fitbuddy-user-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fitbuddy-user-service
+  template:
+    metadata:
+      labels:
+        app: fitbuddy-user-service
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: fitbuddy-sa-user-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: user-service
+          image: "aravindacr.azurecr.io/fitbuddy-"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3005
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          envFrom:
+            - configMapRef:
+                name: fitbuddy-config-user-service
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3005
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3005
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fitbuddy-workout-service
+  namespace: production
+  labels:
+    app: fitbuddy-workout-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fitbuddy-workout-service
+  template:
+    metadata:
+      labels:
+        app: fitbuddy-workout-service
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: fitbuddy-sa-workout-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: workout-service
+          image: "aravindacr.azurecr.io/fitbuddy-"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3006
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          envFrom:
+            - configMapRef:
+                name: fitbuddy-config-workout-service
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3006
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3006
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fitbuddy-yolo-exercise-service
+  namespace: production
+  labels:
+    app: fitbuddy-yolo-exercise-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fitbuddy-yolo-exercise-service
+  template:
+    metadata:
+      labels:
+        app: fitbuddy-yolo-exercise-service
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: fitbuddy-sa-yolo-exercise-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: yolo-exercise-service
+          image: "aravindacr.azurecr.io/fitbuddy-"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          envFrom:
+            - configMapRef:
+                name: fitbuddy-config-yolo-exercise-service
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fitbuddy-frontend
+  namespace: production
+  labels:
+    app: fitbuddy-frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fitbuddy-frontend
+  template:
+    metadata:
+      labels:
+        app: fitbuddy-frontend
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: fitbuddy-sa-frontend
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: frontend
+          image: "aravindacr.azurecr.io/fitbuddy-"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          envFrom:
+            - configMapRef:
+                name: fitbuddy-config-frontend
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 80
             initialDelaySeconds: 10
             periodSeconds: 5
