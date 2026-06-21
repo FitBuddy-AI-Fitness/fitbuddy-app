@@ -16,7 +16,7 @@ spec:
         app: fitbuddy-auth-service
         azure.workload.identity/use: "true"
     spec:
-      serviceAccountName: fitbuddy-sa-auth-service
+      serviceAccountName: fitbuddy-sa
       containers:
         - name: auth-service
           image: "aravindacr.azurecr.io/fitbuddy-"
@@ -64,7 +64,7 @@ spec:
         app: fitbuddy-chatbot-service
         azure.workload.identity/use: "true"
     spec:
-      serviceAccountName: fitbuddy-sa-chatbot-service
+      serviceAccountName: fitbuddy-sa
       containers:
         - name: chatbot-service
           image: "aravindacr.azurecr.io/fitbuddy-"
@@ -112,7 +112,7 @@ spec:
         app: fitbuddy-diet-service
         azure.workload.identity/use: "true"
     spec:
-      serviceAccountName: fitbuddy-sa-diet-service
+      serviceAccountName: fitbuddy-sa
       containers:
         - name: diet-service
           image: "aravindacr.azurecr.io/fitbuddy-"
@@ -160,7 +160,7 @@ spec:
         app: fitbuddy-progress-service
         azure.workload.identity/use: "true"
     spec:
-      serviceAccountName: fitbuddy-sa-progress-service
+      serviceAccountName: fitbuddy-sa
       containers:
         - name: progress-service
           image: "aravindacr.azurecr.io/fitbuddy-"
@@ -208,7 +208,7 @@ spec:
         app: fitbuddy-user-service
         azure.workload.identity/use: "true"
     spec:
-      serviceAccountName: fitbuddy-sa-user-service
+      serviceAccountName: fitbuddy-sa
       containers:
         - name: user-service
           image: "aravindacr.azurecr.io/fitbuddy-"
@@ -256,7 +256,7 @@ spec:
         app: fitbuddy-workout-service
         azure.workload.identity/use: "true"
     spec:
-      serviceAccountName: fitbuddy-sa-workout-service
+      serviceAccountName: fitbuddy-sa
       containers:
         - name: workout-service
           image: "aravindacr.azurecr.io/fitbuddy-"
@@ -304,7 +304,7 @@ spec:
         app: fitbuddy-yolo-exercise-service
         azure.workload.identity/use: "true"
     spec:
-      serviceAccountName: fitbuddy-sa-yolo-exercise-service
+      serviceAccountName: fitbuddy-sa
       containers:
         - name: yolo-exercise-service
           image: "aravindacr.azurecr.io/fitbuddy-"
@@ -352,7 +352,7 @@ spec:
         app: fitbuddy-frontend
         azure.workload.identity/use: "true"
     spec:
-      serviceAccountName: fitbuddy-sa-frontend
+      serviceAccountName: fitbuddy-sa
       containers:
         - name: frontend
           image: "aravindacr.azurecr.io/fitbuddy-"
@@ -381,4 +381,5 @@ spec:
               port: 80
             initialDelaySeconds: 10
             periodSeconds: 5
+
 
