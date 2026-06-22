@@ -58,15 +58,15 @@ jobs:
         with:
           filters: |
             frontend: 'frontend/**'
-            gateway: 'gateway/**'
-            identity: 'identity/**'
-            auth-service: 'auth-service/**'
-            chatbot-service: 'chatbot-service/**'
-            diet-service: 'diet-service/**'
-            user-service: 'user-service/**'
-            workout-service: 'workout-service/**'
-            progress-service: 'progress-service/**'
-            yolo-exercise-service: 'yolo-exercise-service/**'
+            gateway: 'services/gateway/**'
+            identity: 'services/identity/**'
+            auth-service: 'services/auth-service/**'
+            chatbot-service: 'services/chatbot-service/**'
+            diet-service: 'services/diet-service/**'
+            user-service: 'services/user-service/**'
+            workout-service: 'services/workout-service/**'
+            progress-service: 'services/progress-service/**'
+            yolo-exercise-service: 'services/yolo-exercise-service/**'
 
   build-and-scan:
     name: Build & Scan (No Push)
@@ -83,7 +83,9 @@ jobs:
 
       - name: Build Docker Image locally
         run: |
-          docker build -t local/${{ matrix.service }}:${{ github.sha }} ./${{ matrix.service }}
+          DIR="./services/${{ matrix.service }}"
+          if [ "${{ matrix.service }}" = "frontend" ]; then DIR="./frontend"; fi
+          docker build -t local/${{ matrix.service }}:${{ github.sha }} $DIR
 
       - name: Trivy Vulnerability Scan
         uses: aquasecurity/trivy-action@master

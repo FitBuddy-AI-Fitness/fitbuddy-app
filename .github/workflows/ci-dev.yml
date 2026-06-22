@@ -62,15 +62,15 @@ jobs:
         with:
           filters: |
             frontend: 'frontend/**'
-            gateway: 'gateway/**'
-            identity: 'identity/**'
-            auth-service: 'auth-service/**'
-            chatbot-service: 'chatbot-service/**'
-            diet-service: 'diet-service/**'
-            user-service: 'user-service/**'
-            workout-service: 'workout-service/**'
-            progress-service: 'progress-service/**'
-            yolo-exercise-service: 'yolo-exercise-service/**'
+            gateway: 'services/gateway/**'
+            identity: 'services/identity/**'
+            auth-service: 'services/auth-service/**'
+            chatbot-service: 'services/chatbot-service/**'
+            diet-service: 'services/diet-service/**'
+            user-service: 'services/user-service/**'
+            workout-service: 'services/workout-service/**'
+            progress-service: 'services/progress-service/**'
+            yolo-exercise-service: 'services/yolo-exercise-service/**'
 
   build-scan-push:
     name: Build, Scan & Push
@@ -87,7 +87,9 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${{ github.sha }} ./${{ matrix.service }}
+          DIR="./services/${{ matrix.service }}"
+          if [ "${{ matrix.service }}" = "frontend" ]; then DIR="./frontend"; fi
+          docker build -t ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${{ github.sha }} $DIR
           docker tag ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${{ github.sha }} ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:latest-dev
 
       - name: Trivy Vulnerability Scan
