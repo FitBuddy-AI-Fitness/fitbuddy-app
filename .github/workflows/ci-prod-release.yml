@@ -27,8 +27,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.organization=fitbuddy
-            -Dsonar.projectKey=fitbuddy_app
+            -Dsonar.organization=fitbuddy-ai-fitness
+            -Dsonar.projectKey=fitbuddy-ai-fitness_fitbuddy-app
             -Dsonar.qualitygate.wait=true
 
       - name: Snyk Security Scan
