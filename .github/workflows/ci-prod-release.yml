@@ -89,67 +89,23 @@ jobs:
           from: GitHub Actions
           body: The Snyk Security Scan failed on branch ${{ github.ref }}. Please review the Security tab for details.
 
-  detect-changes:
-    name: Detect Changed Microservices
-    needs: snyk-security-scan
-    runs-on: ubuntu-latest
-    outputs:
-      services: ${{ steps.filter.outputs.services }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Detect Changed Services
-        id: filter
-        run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            BASE_SHA="${{ github.event.pull_request.base.sha }}"
-            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-            CHANGED_FILES=$(git diff --name-only $BASE_SHA $HEAD_SHA || echo "")
-          else
-            BASE_SHA="${{ github.event.before }}"
-            HEAD_SHA="${{ github.sha }}"
-            if [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ] || [ -z "$BASE_SHA" ]; then
-              CHANGED_FILES=$(git ls-tree -r --name-only HEAD || echo "")
-            else
-              CHANGED_FILES=$(git diff --name-only $BASE_SHA $HEAD_SHA || echo "")
-            fi
-          fi
-          
-          SERVICES=()
-          for file in $CHANGED_FILES; do
-            if [[ $file == frontend/* ]]; then SERVICES+=("\"frontend\""); fi
-            if [[ $file == services/gateway/* ]]; then SERVICES+=("\"gateway\""); fi
-            if [[ $file == services/identity/* ]]; then SERVICES+=("\"identity\""); fi
-            if [[ $file == services/auth-service/* ]]; then SERVICES+=("\"auth-service\""); fi
-            if [[ $file == services/chatbot-service/* ]]; then SERVICES+=("\"chatbot-service\""); fi
-            if [[ $file == services/diet-service/* ]]; then SERVICES+=("\"diet-service\""); fi
-            if [[ $file == services/user-service/* ]]; then SERVICES+=("\"user-service\""); fi
-            if [[ $file == services/workout-service/* ]]; then SERVICES+=("\"workout-service\""); fi
-            if [[ $file == services/progress-service/* ]]; then SERVICES+=("\"progress-service\""); fi
-            if [[ $file == services/yolo-exercise-service/* ]]; then SERVICES+=("\"yolo-exercise-service\""); fi
-          done
-          
-          if [ ${#SERVICES[@]} -eq 0 ]; then
-            JSON_ARRAY="[]"
-          else
-            UNIQUE_SERVICES=$(echo "${SERVICES[@]}" | tr ' ' '\n' | sort -u | paste -sd, -)
-            JSON_ARRAY="[$UNIQUE_SERVICES]"
-          fi
-          
-          echo "Detected services: $JSON_ARRAY"
-          echo "services=$JSON_ARRAY" >> $GITHUB_OUTPUT
-
   build-scan-push:
     name: Build, Scan & Push to ACR
-    needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.services != '[]' && needs.detect-changes.outputs.services != '' }}
+    needs: snyk-security-scan
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: ${{ fromJSON(needs.detect-changes.outputs.services) }}
+        service: 
+          - frontend
+          - gateway
+          - identity
+          - auth-service
+          - chatbot-service
+          - diet-service
+          - user-service
+          - workout-service
+          - progress-service
+          - yolo-exercise-service
       fail-fast: false
     steps:
       - name: Checkout Code
@@ -184,8 +140,7 @@ jobs:
 
   gitops-update:
     name: Update ArgoCD GitOps Repository (Prod)
-    needs: [detect-changes, build-scan-push]
-    if: ${{ needs.detect-changes.outputs.services != '[]' && needs.detect-changes.outputs.services != '' }}
+    needs: build-scan-push
     runs-on: ubuntu-latest
     steps:
       - name: Checkout GitOps Repository
@@ -198,10 +153,9 @@ jobs:
       - name: Update Prod Values Files
         run: |
           cd gitops-repo
-          SERVICES='${{ needs.detect-changes.outputs.services }}'
-          SERVICE_ARRAY=$(echo $SERVICES | jq -r '.[]')
+          SERVICES="frontend gateway identity auth-service chatbot-service diet-service user-service workout-service progress-service yolo-exercise-service"
           
-          for SERVICE in $SERVICE_ARRAY; do
+          for SERVICE in $SERVICES; do
             echo "Updating tag for $SERVICE to ${{ github.ref_name }} in prod environment"
             yq e -i ".image.tag = \"${{ github.ref_name }}\"" charts/${SERVICE}/values-prod.yaml
           done
