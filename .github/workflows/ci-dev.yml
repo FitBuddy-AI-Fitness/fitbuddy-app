@@ -35,6 +35,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
+            -X
             -Dsonar.organization=fitbuddy-ai-fitness
             -Dsonar.projectKey=fitbuddy-ai-fitness_fitbuddy-app
             -Dsonar.qualitygate.wait=true
