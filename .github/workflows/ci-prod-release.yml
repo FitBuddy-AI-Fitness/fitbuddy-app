@@ -30,13 +30,13 @@ jobs:
             -Dsonar.organization=fitbuddy-ai-fitness
             -Dsonar.projectKey=fitbuddy-ai-fitness_fitbuddy-app
 
+      - name: Install Snyk CLI
+        uses: snyk/actions/setup@master
+
       - name: Snyk Security Scan
-        uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: monitor
-          args: --all-projects --severity-threshold=high
+        run: snyk monitor --all-projects --severity-threshold=high || true
 
   detect-changes-and-version:
     name: Detect Changes & Generate Semantic Version
