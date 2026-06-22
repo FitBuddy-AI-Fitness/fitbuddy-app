@@ -38,6 +38,7 @@ jobs:
             -X
             -Dsonar.organization=fitbuddy-ai-fitness
             -Dsonar.projectKey=fitbuddy-ai-fitness_fitbuddy-app
+            -Dsonar.qualitygate.wait=true
 
   snyk-security-scan:
     name: Snyk Dependency Scan
