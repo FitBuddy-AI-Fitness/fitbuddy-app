@@ -2,8 +2,8 @@ name: CI/CD Pipeline - Production Release
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
 
 env:
   ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
@@ -11,8 +11,8 @@ env:
   ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
 
 jobs:
-  code-quality-and-security:
-    name: Code Quality & Dependency Scan
+  sonarcloud-scan:
+    name: SonarCloud Code Analysis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -30,21 +30,43 @@ jobs:
             -Dsonar.organization=fitbuddy-ai-fitness
             -Dsonar.projectKey=fitbuddy-ai-fitness_fitbuddy-app
 
+  sonarcloud-quality-gate:
+    name: Sonar Quality Gate Check
+    needs: sonarcloud-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarQube Quality Gate check
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  snyk-security-scan:
+    name: Snyk Dependency Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Install Snyk CLI
         uses: snyk/actions/setup@master
 
       - name: Snyk Security Scan
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk monitor --all-projects --severity-threshold=high || true
+        run: snyk test --all-projects --severity-threshold=high
 
-  detect-changes-and-version:
-    name: Detect Changes & Generate Semantic Version
-    needs: code-quality-and-security
+  detect-changes:
+    name: Detect Changed Microservices
+    needs: [sonarcloud-quality-gate, snyk-security-scan]
     runs-on: ubuntu-latest
     outputs:
       services: ${{ steps.filter.outputs.changes }}
-      new_version: ${{ steps.tagger.outputs.new_tag }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -57,6 +79,8 @@ jobs:
         with:
           filters: |
             frontend: 'frontend/**'
+            gateway: 'gateway/**'
+            identity: 'identity/**'
             auth-service: 'auth-service/**'
             chatbot-service: 'chatbot-service/**'
             diet-service: 'diet-service/**'
@@ -65,21 +89,14 @@ jobs:
             progress-service: 'progress-service/**'
             yolo-exercise-service: 'yolo-exercise-service/**'
 
-      - name: Bump Version and Push Tag
-        id: tagger
-        uses: mathieudutour/github-tag-action@v6.1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          default_bump: patch
-
   build-scan-push:
     name: Build, Scan & Push to ACR
-    needs: detect-changes-and-version
-    if: ${{ needs.detect-changes-and-version.outputs.services != '[]' && needs.detect-changes-and-version.outputs.services != '' }}
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.services != '[]' && needs.detect-changes.outputs.services != '' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: ${{ fromJSON(needs.detect-changes-and-version.outputs.services) }}
+        service: ${{ fromJSON(needs.detect-changes.outputs.services) }}
       fail-fast: false
     steps:
       - name: Checkout Code
@@ -87,12 +104,12 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${{ needs.detect-changes-and-version.outputs.new_version }} ./${{ matrix.service }}
+          docker build -t ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${{ github.ref_name }} ./${{ matrix.service }}
 
       - name: Trivy Vulnerability Scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: '${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${{ needs.detect-changes-and-version.outputs.new_version }}'
+          image-ref: '${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${{ github.ref_name }}'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
@@ -108,12 +125,12 @@ jobs:
 
       - name: Push to ACR
         run: |
-          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${{ needs.detect-changes-and-version.outputs.new_version }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${{ github.ref_name }}
 
   gitops-update:
     name: Update ArgoCD GitOps Repository (Prod)
-    needs: [detect-changes-and-version, build-scan-push]
-    if: ${{ needs.detect-changes-and-version.outputs.services != '[]' && needs.detect-changes-and-version.outputs.services != '' }}
+    needs: [detect-changes, build-scan-push]
+    if: ${{ needs.detect-changes.outputs.services != '[]' && needs.detect-changes.outputs.services != '' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout GitOps Repository
@@ -126,12 +143,12 @@ jobs:
       - name: Update Prod Values Files
         run: |
           cd gitops-repo
-          SERVICES='${{ needs.detect-changes-and-version.outputs.services }}'
+          SERVICES='${{ needs.detect-changes.outputs.services }}'
           SERVICE_ARRAY=$(echo $SERVICES | jq -r '.[]')
           
           for SERVICE in $SERVICE_ARRAY; do
-            echo "Updating tag for $SERVICE to ${{ needs.detect-changes-and-version.outputs.new_version }} in prod environment"
-            yq e -i ".image.tag = \"${{ needs.detect-changes-and-version.outputs.new_version }}\"" environments/prod/${SERVICE}-values.yaml
+            echo "Updating tag for $SERVICE to ${{ github.ref_name }} in prod environment"
+            yq e -i ".image.tag = \"${{ github.ref_name }}\"" charts/${SERVICE}/values-prod.yaml
           done
 
       - name: Commit and Push Changes
@@ -139,6 +156,6 @@ jobs:
           cd gitops-repo
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
-          git add environments/prod/
-          git commit -m "chore(gitops): release production image tags to ${{ needs.detect-changes-and-version.outputs.new_version }}"
+          git add charts/
+          git commit -m "chore(gitops): release production image tags to ${{ github.ref_name }}"
           git push origin main

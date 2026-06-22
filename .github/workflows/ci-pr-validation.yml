@@ -6,8 +6,8 @@ on:
       - main
 
 jobs:
-  code-quality-and-security:
-    name: Code Quality & Dependency Scan
+  sonarcloud-scan:
+    name: SonarCloud Code Analysis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -25,17 +25,40 @@ jobs:
             -Dsonar.organization=fitbuddy-ai-fitness
             -Dsonar.projectKey=fitbuddy-ai-fitness_fitbuddy-app
 
+  sonarcloud-quality-gate:
+    name: Sonar Quality Gate Check
+    needs: sonarcloud-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarQube Quality Gate check
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  snyk-security-scan:
+    name: Snyk Dependency Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Install Snyk CLI
         uses: snyk/actions/setup@master
 
       - name: Snyk Security Scan
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk monitor --all-projects --severity-threshold=high || true
+        run: snyk test --all-projects --severity-threshold=high
 
   detect-changes:
     name: Detect Changed Microservices
-    needs: code-quality-and-security
+    needs: [sonarcloud-quality-gate, snyk-security-scan]
     runs-on: ubuntu-latest
     outputs:
       services: ${{ steps.filter.outputs.changes }}
@@ -49,6 +72,8 @@ jobs:
         with:
           filters: |
             frontend: 'frontend/**'
+            gateway: 'gateway/**'
+            identity: 'identity/**'
             auth-service: 'auth-service/**'
             chatbot-service: 'chatbot-service/**'
             diet-service: 'diet-service/**'

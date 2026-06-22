@@ -11,8 +11,8 @@ env:
   ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
 
 jobs:
-  code-quality-and-security:
-    name: Code Quality & Dependency Scan
+  sonarcloud-scan:
+    name: SonarCloud Code Analysis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -30,30 +30,40 @@ jobs:
             -Dsonar.organization=fitbuddy-ai-fitness
             -Dsonar.projectKey=fitbuddy-ai-fitness_fitbuddy-app
 
+  sonarcloud-quality-gate:
+    name: Sonar Quality Gate Check
+    needs: sonarcloud-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarQube Quality Gate check
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  snyk-security-scan:
+    name: Snyk Dependency Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Install Snyk CLI
         uses: snyk/actions/setup@master
 
       - name: Snyk Security Scan
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk monitor --all-projects --severity-threshold=high || true
-
-      - name: Send Email on Failure
-        if: failure()
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: ${{ secrets.SMTP_SERVER }}
-          server_port: ${{ secrets.SMTP_PORT }}
-          username: ${{ secrets.SMTP_USERNAME }}
-          password: ${{ secrets.SMTP_PASSWORD }}
-          subject: "🚨 FitBuddy CI Failure (Dev) - Code Quality & Security"
-          body: "The CI pipeline failed during the Code Quality & Dependency Scan stage. Branch: ${{ github.ref_name }}. Commit: ${{ github.sha }}. Please check the GitHub Actions logs."
-          to: ${{ secrets.TEAM_EMAIL }}
-          from: ${{ secrets.SMTP_USERNAME }}
+        run: snyk test --all-projects --severity-threshold=high
 
   detect-changes:
     name: Detect Changed Microservices
-    needs: code-quality-and-security
+    needs: [sonarcloud-quality-gate, snyk-security-scan]
     runs-on: ubuntu-latest
     outputs:
       services: ${{ steps.filter.outputs.changes }}
@@ -67,6 +77,8 @@ jobs:
         with:
           filters: |
             frontend: 'frontend/**'
+            gateway: 'gateway/**'
+            identity: 'identity/**'
             auth-service: 'auth-service/**'
             chatbot-service: 'chatbot-service/**'
             diet-service: 'diet-service/**'
@@ -91,6 +103,7 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build -t ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${{ github.sha }} ./${{ matrix.service }}
+          docker tag ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${{ github.sha }} ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:latest-dev
 
       - name: Trivy Vulnerability Scan
         uses: aquasecurity/trivy-action@master
@@ -112,22 +125,10 @@ jobs:
       - name: Push to ACR
         run: |
           docker push ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${{ github.sha }}
-
-      - name: Send Email on Failure
-        if: failure()
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: ${{ secrets.SMTP_SERVER }}
-          server_port: ${{ secrets.SMTP_PORT }}
-          username: ${{ secrets.SMTP_USERNAME }}
-          password: ${{ secrets.SMTP_PASSWORD }}
-          subject: "🚨 FitBuddy CI Failure (Dev) - Build/Scan/Push"
-          body: "The CI pipeline failed for service '${{ matrix.service }}'. Stage: Build, Scan, or Push. Branch: ${{ github.ref_name }}. Commit: ${{ github.sha }}. Please check logs."
-          to: ${{ secrets.TEAM_EMAIL }}
-          from: ${{ secrets.SMTP_USERNAME }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:latest-dev
 
   gitops-update:
-    name: Update ArgoCD GitOps Repository
+    name: Update ArgoCD GitOps Repository (Dev)
     needs: [detect-changes, build-scan-push]
     if: ${{ needs.detect-changes.outputs.services != '[]' && needs.detect-changes.outputs.services != '' }}
     runs-on: ubuntu-latest
@@ -139,16 +140,15 @@ jobs:
           token: ${{ secrets.GITOPS_PAT }}
           path: gitops-repo
 
-      - name: Update Values Files
+      - name: Update Dev Values Files
         run: |
           cd gitops-repo
           SERVICES='${{ needs.detect-changes.outputs.services }}'
-          # Parse the JSON array into a bash array
           SERVICE_ARRAY=$(echo $SERVICES | jq -r '.[]')
           
           for SERVICE in $SERVICE_ARRAY; do
             echo "Updating tag for $SERVICE to ${{ github.sha }} in dev environment"
-            yq e -i ".image.tag = \"${{ github.sha }}\"" environments/dev/${SERVICE}-values.yaml
+            yq e -i ".image.tag = \"${{ github.sha }}\"" charts/${SERVICE}/values-dev.yaml
           done
 
       - name: Commit and Push Changes
@@ -156,6 +156,6 @@ jobs:
           cd gitops-repo
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
-          git add environments/dev/
+          git add charts/
           git commit -m "chore(gitops): update dev image tags to ${{ github.sha }}"
           git push origin main
