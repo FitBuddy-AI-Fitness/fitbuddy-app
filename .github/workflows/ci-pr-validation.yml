@@ -24,22 +24,7 @@ jobs:
           args: >
             -Dsonar.organization=fitbuddy-ai-fitness
             -Dsonar.projectKey=fitbuddy-ai-fitness_fitbuddy-app
-
-  sonarcloud-quality-gate:
-    name: Sonar Quality Gate Check
-    needs: sonarcloud-scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: SonarQube Quality Gate check
-        uses: sonarsource/sonarqube-quality-gate-action@master
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+            -Dsonar.qualitygate.wait=true
 
   snyk-security-scan:
     name: Snyk Dependency Scan
@@ -58,7 +43,7 @@ jobs:
 
   detect-changes:
     name: Detect Changed Microservices
-    needs: [sonarcloud-quality-gate, snyk-security-scan]
+    needs: [sonarcloud-scan, snyk-security-scan]
     runs-on: ubuntu-latest
     outputs:
       services: ${{ steps.filter.outputs.changes }}
