@@ -1,0 +1,162 @@
+name: CI/CD Pipeline - Dev
+
+on:
+  push:
+    branches:
+      - dev
+
+env:
+  ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+  ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+  ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+
+jobs:
+  code-quality-and-security:
+    name: Code Quality & Dependency Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=fitbuddy
+            -Dsonar.projectKey=fitbuddy_app
+            -Dsonar.qualitygate.wait=true
+
+      - name: Snyk Security Scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: monitor
+          args: --all-projects --severity-threshold=high
+
+      - name: Send Email on Failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "🚨 FitBuddy CI Failure (Dev) - Code Quality & Security"
+          body: "The CI pipeline failed during the Code Quality & Dependency Scan stage. Branch: ${{ github.ref_name }}. Commit: ${{ github.sha }}. Please check the GitHub Actions logs."
+          to: ${{ secrets.TEAM_EMAIL }}
+          from: ${{ secrets.SMTP_USERNAME }}
+
+  detect-changes:
+    name: Detect Changed Microservices
+    needs: code-quality-and-security
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Detect Changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend: 'frontend/**'
+            auth-service: 'auth-service/**'
+            chatbot-service: 'chatbot-service/**'
+            diet-service: 'diet-service/**'
+            user-service: 'user-service/**'
+            workout-service: 'workout-service/**'
+            progress-service: 'progress-service/**'
+            yolo-exercise-service: 'yolo-exercise-service/**'
+
+  build-scan-push:
+    name: Build, Scan & Push
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.services != '[]' && needs.detect-changes.outputs.services != '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: ${{ fromJSON(needs.detect-changes.outputs.services) }}
+      fail-fast: false
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${{ github.sha }} ./${{ matrix.service }}
+
+      - name: Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${{ github.sha }}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Azure Container Registry Login
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ env.ACR_USERNAME }}
+          password: ${{ env.ACR_PASSWORD }}
+
+      - name: Push to ACR
+        run: |
+          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${{ github.sha }}
+
+      - name: Send Email on Failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "🚨 FitBuddy CI Failure (Dev) - Build/Scan/Push"
+          body: "The CI pipeline failed for service '${{ matrix.service }}'. Stage: Build, Scan, or Push. Branch: ${{ github.ref_name }}. Commit: ${{ github.sha }}. Please check logs."
+          to: ${{ secrets.TEAM_EMAIL }}
+          from: ${{ secrets.SMTP_USERNAME }}
+
+  gitops-update:
+    name: Update ArgoCD GitOps Repository
+    needs: [detect-changes, build-scan-push]
+    if: ${{ needs.detect-changes.outputs.services != '[]' && needs.detect-changes.outputs.services != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitOps Repository
+        uses: actions/checkout@v4
+        with:
+          repository: FitBuddy-AI-Fitness/fitbuddy-argocd
+          token: ${{ secrets.GITOPS_PAT }}
+          path: gitops-repo
+
+      - name: Update Values Files
+        run: |
+          cd gitops-repo
+          SERVICES='${{ needs.detect-changes.outputs.services }}'
+          # Parse the JSON array into a bash array
+          SERVICE_ARRAY=$(echo $SERVICES | jq -r '.[]')
+          
+          for SERVICE in $SERVICE_ARRAY; do
+            echo "Updating tag for $SERVICE to ${{ github.sha }} in dev environment"
+            yq e -i ".image.tag = \"${{ github.sha }}\"" environments/dev/${SERVICE}-values.yaml
+          done
+
+      - name: Commit and Push Changes
+        run: |
+          cd gitops-repo
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add environments/dev/
+          git commit -m "chore(gitops): update dev image tags to ${{ github.sha }}"
+          git push origin main
