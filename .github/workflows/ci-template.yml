@@ -13,10 +13,14 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: write
+  pull-requests: write
+  security-events: write
+
 jobs:
   sonarcloud-scan:
     name: SonarCloud Code Analysis
-    if: inputs.environment != 'prod'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -38,7 +42,6 @@ jobs:
   snyk-security-scan:
     name: Snyk Dependency Scan
     needs: sonarcloud-scan
-    if: inputs.environment != 'prod'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -85,10 +88,9 @@ jobs:
           from: GitHub Actions
           body: The Snyk Security Scan failed for ${{ inputs.service-name }} on branch ${{ github.ref }}.
 
-  build-trivy-push:
-    name: Build, Scan & Push
+  build-and-trivy:
+    name: Build & Scan
     needs: snyk-security-scan
-    if: always() && !cancelled() && !failure() && (inputs.environment == 'prod' || needs.snyk-security-scan.result == 'success')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -107,17 +109,8 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
 
-      - name: Determine Tag
-        id: get-tag
-        run: |
-          if [ "${{ inputs.environment }}" == "prod" ]; then
-            echo "TAG=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          else
-            echo "TAG=${{ github.sha }}" >> $GITHUB_OUTPUT
-          fi
-
       - name: Azure Container Registry Login
-        if: inputs.environment != 'pr'
+        if: inputs.environment == 'dev'
         uses: azure/docker-login@v1
         with:
           login-server: ${{ secrets.ACR_LOGIN_SERVER }}
@@ -125,15 +118,15 @@ jobs:
           password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Push to ACR
-        if: inputs.environment != 'pr'
+        if: inputs.environment == 'dev'
         run: |
-          docker tag local/${{ inputs.service-name }}:latest ${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.service-name }}:${{ steps.get-tag.outputs.TAG }}
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.service-name }}:${{ steps.get-tag.outputs.TAG }}
+          docker tag local/${{ inputs.service-name }}:latest ${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.service-name }}:${{ github.sha }}
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.service-name }}:${{ github.sha }}
 
   gitops-update:
-    name: Update ArgoCD GitOps Repository
-    needs: build-trivy-push
-    if: inputs.environment != 'pr'
+    name: Update ArgoCD GitOps Repository (Dev)
+    needs: build-and-trivy
+    if: inputs.environment == 'dev'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout GitOps Repository
@@ -146,17 +139,12 @@ jobs:
       - name: Update Values File
         run: |
           cd gitops-repo
-          if [ "${{ inputs.environment }}" == "prod" ]; then
-            FILE="charts/${{ inputs.service-name }}/values-prod.yaml"
-            TAG="${{ github.ref_name }}"
-          else
-            FILE="charts/${{ inputs.service-name }}/values-dev.yaml"
-            TAG="${{ github.sha }}"
-          fi
+          FILE="charts/${{ inputs.service-name }}/values-dev.yaml"
+          TAG="${{ github.sha }}"
           
           yq e -i ".image.tag = \"$TAG\"" $FILE
           
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
           git add $FILE
-          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(gitops): update ${{ inputs.environment }} image tag for ${{ inputs.service-name }} to $TAG" && git push origin main)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(gitops): update dev image tag for ${{ inputs.service-name }} to $TAG" && git push origin main)
