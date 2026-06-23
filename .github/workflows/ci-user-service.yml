@@ -16,6 +16,11 @@ on:
       - '.github/workflows/ci-user-service.yml'
       - '.github/workflows/ci-template.yml'
 
+permissions:
+  contents: write
+  pull-requests: write
+  security-events: write
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
