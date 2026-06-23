@@ -1,0 +1,162 @@
+name: Reusable CI/CD Template
+
+on:
+  workflow_call:
+    inputs:
+      service-name:
+        required: true
+        type: string
+      docker-path:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+
+jobs:
+  sonarcloud-scan:
+    name: SonarCloud Code Analysis
+    if: inputs.environment != 'prod'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2.2.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=fitbuddy-ai-fitness
+            -Dsonar.projectKey=fitbuddy-ai-fitness_fitbuddy-app
+            -Dsonar.qualitygate.wait=true
+
+  snyk-security-scan:
+    name: Snyk Dependency Scan
+    needs: sonarcloud-scan
+    if: inputs.environment != 'prod'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Snyk CLI
+        run: npm install -g snyk
+
+      - name: Authenticate Snyk
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk auth $SNYK_TOKEN
+
+      - name: Snyk Dependency Scan
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          snyk test \
+            --all-projects \
+            --severity-threshold=high \
+            --sarif-file-output=snyk.sarif
+
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk.sarif
+
+      - name: Send Email on Failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: 465
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: Snyk Security Scan Failed in ${{ github.repository }}
+          to: ${{ secrets.SMTP_TO }}
+          from: GitHub Actions
+          body: The Snyk Security Scan failed for ${{ inputs.service-name }} on branch ${{ github.ref }}.
+
+  build-trivy-push:
+    name: Build, Scan & Push
+    needs: snyk-security-scan
+    if: always() && !cancelled() && !failure() && (inputs.environment == 'prod' || needs.snyk-security-scan.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: docker build -t local/${{ inputs.service-name }}:latest ${{ inputs.docker-path }}
+
+      - name: Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: 'local/${{ inputs.service-name }}:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Determine Tag
+        id: get-tag
+        run: |
+          if [ "${{ inputs.environment }}" == "prod" ]; then
+            echo "TAG=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "TAG=${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Azure Container Registry Login
+        if: inputs.environment != 'pr'
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Push to ACR
+        if: inputs.environment != 'pr'
+        run: |
+          docker tag local/${{ inputs.service-name }}:latest ${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.service-name }}:${{ steps.get-tag.outputs.TAG }}
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.service-name }}:${{ steps.get-tag.outputs.TAG }}
+
+  gitops-update:
+    name: Update ArgoCD GitOps Repository
+    needs: build-trivy-push
+    if: inputs.environment != 'pr'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitOps Repository
+        uses: actions/checkout@v4
+        with:
+          repository: FitBuddy-AI-Fitness/fitbuddy-argocd
+          token: ${{ secrets.GITOPS_PAT }}
+          path: gitops-repo
+
+      - name: Update Values File
+        run: |
+          cd gitops-repo
+          if [ "${{ inputs.environment }}" == "prod" ]; then
+            FILE="charts/${{ inputs.service-name }}/values-prod.yaml"
+            TAG="${{ github.ref_name }}"
+          else
+            FILE="charts/${{ inputs.service-name }}/values-dev.yaml"
+            TAG="${{ github.sha }}"
+          fi
+          
+          yq e -i ".image.tag = \"$TAG\"" $FILE
+          
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add $FILE
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(gitops): update ${{ inputs.environment }} image tag for ${{ inputs.service-name }} to $TAG" && git push origin main)

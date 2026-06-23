@@ -1,0 +1,32 @@
+name: CI - yolo-exercise-service
+
+on:
+  push:
+    branches:
+      - dev
+    tags:
+      - 'v*'
+    paths:
+      - 'services/yolo-exercise-service/**'
+      - '.github/workflows/ci-yolo-exercise-service.yml'
+      - '.github/workflows/ci-template.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'services/yolo-exercise-service/**'
+      - '.github/workflows/ci-yolo-exercise-service.yml'
+      - '.github/workflows/ci-template.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  call-template:
+    uses: ./.github/workflows/ci-template.yml
+    with:
+      service-name: 'yolo-exercise-service'
+      docker-path: 'services/yolo-exercise-service'
+      environment: ${{ github.event_name == 'pull_request' && 'pr' || (startsWith(github.ref, 'refs/tags/v') && 'prod' || 'dev') }}
+    secrets: inherit
