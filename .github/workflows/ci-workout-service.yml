@@ -1,0 +1,35 @@
+name: CI - workout-service
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'services/workout-service/**'
+      - '.github/workflows/ci-workout-service.yml'
+      - '.github/workflows/ci-template.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'services/workout-service/**'
+      - '.github/workflows/ci-workout-service.yml'
+      - '.github/workflows/ci-template.yml'
+
+permissions:
+  contents: write
+  pull-requests: write
+  security-events: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  call-template:
+    uses: ./.github/workflows/ci-template.yml
+    with:
+      service-name: 'workout-service'
+      docker-path: 'services/workout-service'
+      environment: ${{ github.event_name == 'pull_request' && 'pr' || 'dev' }}
+    secrets: inherit

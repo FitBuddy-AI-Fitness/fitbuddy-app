@@ -1,0 +1,35 @@
+name: CI - frontend
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/ci-frontend.yml'
+      - '.github/workflows/ci-template.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/ci-frontend.yml'
+      - '.github/workflows/ci-template.yml'
+
+permissions:
+  contents: write
+  pull-requests: write
+  security-events: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  call-template:
+    uses: ./.github/workflows/ci-template.yml
+    with:
+      service-name: 'frontend'
+      docker-path: 'frontend'
+      environment: ${{ github.event_name == 'pull_request' && 'pr' || 'dev' }}
+    secrets: inherit

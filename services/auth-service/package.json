@@ -1,7 +1,7 @@
 {
   "name": "auth-service",
   "version": "1.0.0",
-  "description": "BodyGPT Auth Service", 
+  "description": "BodyGPT Auth Service",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {

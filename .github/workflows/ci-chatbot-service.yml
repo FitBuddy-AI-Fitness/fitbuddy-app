@@ -1,0 +1,35 @@
+name: CI - chatbot-service
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'services/chatbot-service/**'
+      - '.github/workflows/ci-chatbot-service.yml'
+      - '.github/workflows/ci-template.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'services/chatbot-service/**'
+      - '.github/workflows/ci-chatbot-service.yml'
+      - '.github/workflows/ci-template.yml'
+
+permissions:
+  contents: write
+  pull-requests: write
+  security-events: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  call-template:
+    uses: ./.github/workflows/ci-template.yml
+    with:
+      service-name: 'chatbot-service'
+      docker-path: 'services/chatbot-service'
+      environment: ${{ github.event_name == 'pull_request' && 'pr' || 'dev' }}
+    secrets: inherit

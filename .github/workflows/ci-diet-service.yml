@@ -1,0 +1,35 @@
+name: CI - diet-service
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'services/diet-service/**'
+      - '.github/workflows/ci-diet-service.yml'
+      - '.github/workflows/ci-template.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'services/diet-service/**'
+      - '.github/workflows/ci-diet-service.yml'
+      - '.github/workflows/ci-template.yml'
+
+permissions:
+  contents: write
+  pull-requests: write
+  security-events: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  call-template:
+    uses: ./.github/workflows/ci-template.yml
+    with:
+      service-name: 'diet-service'
+      docker-path: 'services/diet-service'
+      environment: ${{ github.event_name == 'pull_request' && 'pr' || 'dev' }}
+    secrets: inherit

@@ -1,0 +1,35 @@
+name: CI - auth-service
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'services/auth-service/**'
+      - '.github/workflows/ci-auth-service.yml'
+      - '.github/workflows/ci-template.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'services/auth-service/**'
+      - '.github/workflows/ci-auth-service.yml'
+      - '.github/workflows/ci-template.yml'
+
+permissions:
+  contents: write
+  pull-requests: write
+  security-events: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  call-template:
+    uses: ./.github/workflows/ci-template.yml
+    with:
+      service-name: 'auth-service'
+      docker-path: 'services/auth-service'
+      environment: ${{ github.event_name == 'pull_request' && 'pr' || 'dev' }}
+    secrets: inherit
