@@ -46,9 +46,24 @@ jobs:
           password: ${{ env.ACR_PASSWORD }}
 
       - name: Push to ACR
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          docker tag local/auth-service:latest ${{ env.ACR_LOGIN_SERVER }}/auth-service:${{ github.ref_name }}
-          docker push ${{ env.ACR_LOGIN_SERVER }}/auth-service:${{ github.ref_name }}
+          docker tag local/auth-service:latest $ACR_LOGIN_SERVER/auth-service:$REF_NAME
+          docker push $ACR_LOGIN_SERVER/auth-service:$REF_NAME
+      - name: Send Email on Build/Trivy Failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: Docker Build or Trivy Scan Failed for auth-service (Prod Release)
+          to: ${{ secrets.TEAM_EMAIL }}
+          from: GitHub Actions
+          body: The Docker Build or Trivy Vulnerability Scan failed for auth-service on branch ${{ github.ref }}.
+
 
   build-chatbot-service:
     name: Build chatbot-service
@@ -78,9 +93,24 @@ jobs:
           password: ${{ env.ACR_PASSWORD }}
 
       - name: Push to ACR
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          docker tag local/chatbot-service:latest ${{ env.ACR_LOGIN_SERVER }}/chatbot-service:${{ github.ref_name }}
-          docker push ${{ env.ACR_LOGIN_SERVER }}/chatbot-service:${{ github.ref_name }}
+          docker tag local/chatbot-service:latest $ACR_LOGIN_SERVER/chatbot-service:$REF_NAME
+          docker push $ACR_LOGIN_SERVER/chatbot-service:$REF_NAME
+      - name: Send Email on Build/Trivy Failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: Docker Build or Trivy Scan Failed for chatbot-service (Prod Release)
+          to: ${{ secrets.TEAM_EMAIL }}
+          from: GitHub Actions
+          body: The Docker Build or Trivy Vulnerability Scan failed for chatbot-service on branch ${{ github.ref }}.
+
 
   build-diet-service:
     name: Build diet-service
@@ -110,9 +140,24 @@ jobs:
           password: ${{ env.ACR_PASSWORD }}
 
       - name: Push to ACR
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          docker tag local/diet-service:latest ${{ env.ACR_LOGIN_SERVER }}/diet-service:${{ github.ref_name }}
-          docker push ${{ env.ACR_LOGIN_SERVER }}/diet-service:${{ github.ref_name }}
+          docker tag local/diet-service:latest $ACR_LOGIN_SERVER/diet-service:$REF_NAME
+          docker push $ACR_LOGIN_SERVER/diet-service:$REF_NAME
+      - name: Send Email on Build/Trivy Failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: Docker Build or Trivy Scan Failed for diet-service (Prod Release)
+          to: ${{ secrets.TEAM_EMAIL }}
+          from: GitHub Actions
+          body: The Docker Build or Trivy Vulnerability Scan failed for diet-service on branch ${{ github.ref }}.
+
 
   build-frontend:
     name: Build frontend
@@ -142,9 +187,24 @@ jobs:
           password: ${{ env.ACR_PASSWORD }}
 
       - name: Push to ACR
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          docker tag local/frontend:latest ${{ env.ACR_LOGIN_SERVER }}/frontend:${{ github.ref_name }}
-          docker push ${{ env.ACR_LOGIN_SERVER }}/frontend:${{ github.ref_name }}
+          docker tag local/frontend:latest $ACR_LOGIN_SERVER/frontend:$REF_NAME
+          docker push $ACR_LOGIN_SERVER/frontend:$REF_NAME
+      - name: Send Email on Build/Trivy Failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: Docker Build or Trivy Scan Failed for frontend (Prod Release)
+          to: ${{ secrets.TEAM_EMAIL }}
+          from: GitHub Actions
+          body: The Docker Build or Trivy Vulnerability Scan failed for frontend on branch ${{ github.ref }}.
+
 
   build-progress-service:
     name: Build progress-service
@@ -174,9 +234,24 @@ jobs:
           password: ${{ env.ACR_PASSWORD }}
 
       - name: Push to ACR
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          docker tag local/progress-service:latest ${{ env.ACR_LOGIN_SERVER }}/progress-service:${{ github.ref_name }}
-          docker push ${{ env.ACR_LOGIN_SERVER }}/progress-service:${{ github.ref_name }}
+          docker tag local/progress-service:latest $ACR_LOGIN_SERVER/progress-service:$REF_NAME
+          docker push $ACR_LOGIN_SERVER/progress-service:$REF_NAME
+      - name: Send Email on Build/Trivy Failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: Docker Build or Trivy Scan Failed for progress-service (Prod Release)
+          to: ${{ secrets.TEAM_EMAIL }}
+          from: GitHub Actions
+          body: The Docker Build or Trivy Vulnerability Scan failed for progress-service on branch ${{ github.ref }}.
+
 
   build-user-service:
     name: Build user-service
@@ -206,9 +281,24 @@ jobs:
           password: ${{ env.ACR_PASSWORD }}
 
       - name: Push to ACR
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          docker tag local/user-service:latest ${{ env.ACR_LOGIN_SERVER }}/user-service:${{ github.ref_name }}
-          docker push ${{ env.ACR_LOGIN_SERVER }}/user-service:${{ github.ref_name }}
+          docker tag local/user-service:latest $ACR_LOGIN_SERVER/user-service:$REF_NAME
+          docker push $ACR_LOGIN_SERVER/user-service:$REF_NAME
+      - name: Send Email on Build/Trivy Failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: Docker Build or Trivy Scan Failed for user-service (Prod Release)
+          to: ${{ secrets.TEAM_EMAIL }}
+          from: GitHub Actions
+          body: The Docker Build or Trivy Vulnerability Scan failed for user-service on branch ${{ github.ref }}.
+
 
   build-workout-service:
     name: Build workout-service
@@ -238,9 +328,24 @@ jobs:
           password: ${{ env.ACR_PASSWORD }}
 
       - name: Push to ACR
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          docker tag local/workout-service:latest ${{ env.ACR_LOGIN_SERVER }}/workout-service:${{ github.ref_name }}
-          docker push ${{ env.ACR_LOGIN_SERVER }}/workout-service:${{ github.ref_name }}
+          docker tag local/workout-service:latest $ACR_LOGIN_SERVER/workout-service:$REF_NAME
+          docker push $ACR_LOGIN_SERVER/workout-service:$REF_NAME
+      - name: Send Email on Build/Trivy Failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: Docker Build or Trivy Scan Failed for workout-service (Prod Release)
+          to: ${{ secrets.TEAM_EMAIL }}
+          from: GitHub Actions
+          body: The Docker Build or Trivy Vulnerability Scan failed for workout-service on branch ${{ github.ref }}.
+
 
   build-yolo-exercise-service:
     name: Build yolo-exercise-service
@@ -270,9 +375,24 @@ jobs:
           password: ${{ env.ACR_PASSWORD }}
 
       - name: Push to ACR
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          docker tag local/yolo-exercise-service:latest ${{ env.ACR_LOGIN_SERVER }}/yolo-exercise-service:${{ github.ref_name }}
-          docker push ${{ env.ACR_LOGIN_SERVER }}/yolo-exercise-service:${{ github.ref_name }}
+          docker tag local/yolo-exercise-service:latest $ACR_LOGIN_SERVER/yolo-exercise-service:$REF_NAME
+          docker push $ACR_LOGIN_SERVER/yolo-exercise-service:$REF_NAME
+      - name: Send Email on Build/Trivy Failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: Docker Build or Trivy Scan Failed for yolo-exercise-service (Prod Release)
+          to: ${{ secrets.TEAM_EMAIL }}
+          from: GitHub Actions
+          body: The Docker Build or Trivy Vulnerability Scan failed for yolo-exercise-service on branch ${{ github.ref }}.
+
 
   update-gitops:
     name: Update ArgoCD GitOps Repository (Prod)
@@ -287,15 +407,30 @@ jobs:
           path: gitops-repo
 
       - name: Update Prod Values Files
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
           cd gitops-repo
           SERVICES="auth-service chatbot-service diet-service frontend progress-service user-service workout-service yolo-exercise-service"
           for SERVICE in $SERVICES; do
-            echo "Updating prod image tag for $SERVICE to ${{ github.ref_name }}"
-            yq e -i ".image.tag = \"${{ github.ref_name }}\"" charts/$SERVICE/values-prod.yaml
+            echo "Updating prod image tag for $SERVICE to $REF_NAME"
+            yq e -i ".image.tag = \"$REF_NAME\"" charts/$SERVICE/values-prod.yaml
             git add charts/$SERVICE/values-prod.yaml
           done
           
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
-          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(gitops): release production image tags to ${{ github.ref_name }}" && git push origin main)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(gitops): release production image tags to $REF_NAME" && git push origin main)
+
+      - name: Send Email on Pipeline Success
+        if: success()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: Production Release Succeeded for ${{ github.ref_name }}
+          to: ${{ secrets.TEAM_EMAIL }}
+          from: GitHub Actions
+          body: The entire Production Release pipeline completed successfully for tag ${{ github.ref_name }}. All images were pushed and ArgoCD was updated.
