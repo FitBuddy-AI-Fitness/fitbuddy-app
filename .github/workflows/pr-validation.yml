@@ -80,7 +80,7 @@ jobs:
           server_port: ${{ secrets.SMTP_PORT }}
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
-          subject: ✅ PR Validation Successful: Ready to Merge!
+          subject: "✅ PR Validation Successful: Ready to Merge!"
           to: ${{ secrets.TEAM_EMAIL }}
           from: GitHub Actions
           body: |
