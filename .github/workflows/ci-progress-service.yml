@@ -8,13 +8,6 @@ on:
       - 'services/progress-service/**'
       - '.github/workflows/ci-progress-service.yml'
       - '.github/workflows/ci-template.yml'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'services/progress-service/**'
-      - '.github/workflows/ci-progress-service.yml'
-      - '.github/workflows/ci-template.yml'
 
 permissions:
   contents: write
@@ -31,5 +24,5 @@ jobs:
     with:
       service-name: 'progress-service'
       docker-path: 'services/progress-service'
-      environment: ${{ github.event_name == 'pull_request' && 'pr' || 'dev' }}
+      environment: 'dev'
     secrets: inherit
