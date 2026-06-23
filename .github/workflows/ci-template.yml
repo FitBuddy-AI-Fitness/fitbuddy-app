@@ -24,12 +24,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2.2.0
+        uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216 # v2.2.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -39,16 +39,29 @@ jobs:
             -Dsonar.projectKey=FitBuddy-AI-Fitness_fitbuddy-app
             -Dsonar.qualitygate.wait=true
 
+      - name: Send Email on SonarCloud Failure
+        if: failure()
+        uses: dawidd6/action-send-mail@4226df7daafa6fc901a43789c49bf7ab309066e7 # v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: SonarCloud Code Analysis Failed for ${{ inputs.service-name }}
+          to: ${{ secrets.TEAM_EMAIL }}
+          from: GitHub Actions
+          body: The SonarCloud Code Analysis failed for ${{ inputs.service-name }} on branch ${{ github.ref }}.
+
   snyk-security-scan:
     name: Snyk Dependency Scan
     needs: sonarcloud-scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
 
@@ -71,20 +84,20 @@ jobs:
 
       - name: Upload SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@dd903d2e4f5405488e5ef1422510ee31c8b32357 # v3
         with:
           sarif_file: snyk.sarif
 
-      - name: Send Email on Failure
+      - name: Send Email on Snyk Failure
         if: failure()
-        uses: dawidd6/action-send-mail@v3
+        uses: dawidd6/action-send-mail@4226df7daafa6fc901a43789c49bf7ab309066e7 # v3
         with:
           server_address: ${{ secrets.SMTP_SERVER }}
-          server_port: 465
+          server_port: ${{ secrets.SMTP_PORT }}
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
-          subject: Snyk Security Scan Failed in ${{ github.repository }}
-          to: ${{ secrets.SMTP_TO }}
+          subject: Snyk Security Scan Failed for ${{ inputs.service-name }}
+          to: ${{ secrets.TEAM_EMAIL }}
           from: GitHub Actions
           body: The Snyk Security Scan failed for ${{ inputs.service-name }} on branch ${{ github.ref }}.
 
@@ -94,13 +107,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Build Docker Image
         run: docker build -t local/${{ inputs.service-name }}:latest ${{ inputs.docker-path }}
 
       - name: Trivy Vulnerability Scan
-        uses: aquasecurity/trivy-action@v0.20.0
+        uses: aquasecurity/trivy-action@b2933f565dbc598b29947660e66259e3c7bc8561 # v0.20.0
         with:
           image-ref: 'local/${{ inputs.service-name }}:latest'
           format: 'table'
@@ -111,7 +124,7 @@ jobs:
 
       - name: Azure Container Registry Login
         if: inputs.environment == 'dev'
-        uses: azure/docker-login@v1
+        uses: azure/docker-login@83efeb77770c98b620c73055fbb59b2847e17dc0 # v1
         with:
           login-server: ${{ secrets.ACR_LOGIN_SERVER }}
           username: ${{ secrets.ACR_USERNAME }}
@@ -119,9 +132,27 @@ jobs:
 
       - name: Push to ACR
         if: inputs.environment == 'dev'
+        env:
+          SERVICE_NAME: ${{ inputs.service-name }}
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+          GITHUB_SHA_VAR: ${{ github.sha }}
         run: |
-          docker tag local/${{ inputs.service-name }}:latest ${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.service-name }}:${{ github.sha }}
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.service-name }}:${{ github.sha }}
+          SHORT_SHA=$(echo "$GITHUB_SHA_VAR" | cut -c1-7)
+          docker tag local/$SERVICE_NAME:latest $ACR_LOGIN_SERVER/$SERVICE_NAME:$SHORT_SHA
+          docker push $ACR_LOGIN_SERVER/$SERVICE_NAME:$SHORT_SHA
+      - name: Send Email on Build/Trivy Failure
+        if: failure()
+        uses: dawidd6/action-send-mail@4226df7daafa6fc901a43789c49bf7ab309066e7 # v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: Docker Build or Trivy Scan Failed for ${{ inputs.service-name }}
+          to: ${{ secrets.TEAM_EMAIL }}
+          from: GitHub Actions
+          body: The Docker Build or Trivy Vulnerability Scan failed for ${{ inputs.service-name }} on branch ${{ github.ref }}.
+
 
   gitops-update:
     name: Update ArgoCD GitOps Repository (Dev)
@@ -130,22 +161,43 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout GitOps Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: FitBuddy-AI-Fitness/fitbuddy-argocd
           token: ${{ secrets.GITOPS_PAT }}
           path: gitops-repo
 
       - name: Update Values File
+        env:
+          SERVICE_NAME: ${{ inputs.service-name }}
+          GITHUB_SHA_VAR: ${{ github.sha }}
         run: |
           cd gitops-repo
-          FILE="charts/${{ inputs.service-name }}/values-dev.yaml"
-          TAG="${{ github.sha }}"
+          FILE="charts/$SERVICE_NAME/values-dev.yaml"
+          TAG=$(echo "$GITHUB_SHA_VAR" | cut -c1-7)
           
           yq e -i ".image.tag = \"$TAG\"" $FILE
           
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
           git add $FILE
-          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(gitops): update dev image tag for ${{ inputs.service-name }} to $TAG" && git push origin main)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(gitops): update dev image tag for $SERVICE_NAME to $TAG" && git push origin main)
 
+
+  notify-success:
+    name: Notify Overall Success
+    needs: gitops-update
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Email on Pipeline Success
+        uses: dawidd6/action-send-mail@4226df7daafa6fc901a43789c49bf7ab309066e7 # v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: CI/CD Pipeline Succeeded for ${{ inputs.service-name }}
+          to: ${{ secrets.TEAM_EMAIL }}
+          from: GitHub Actions
+          body: The entire CI/CD pipeline completed successfully for ${{ inputs.service-name }} on branch ${{ github.ref }}. The image was pushed and ArgoCD was updated.
