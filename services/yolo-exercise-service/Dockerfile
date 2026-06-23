@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements.txt ./
 # Pre-install CPU-only PyTorch to avoid massive CUDA images and disk space issues
-RUN pip install --no-cache-dir --only-binary :all: torch torchvision --index-url https://download.pytorch.org/whl/cpu # NOSONAR
+RUN pip install --no-cache-dir --only-binary :all: "torch>=2.6.0" torchvision --index-url https://download.pytorch.org/whl/cpu # NOSONAR
 RUN pip install --no-cache-dir --only-binary :all: -r requirements.txt # NOSONAR
 
 # Create cache directory for YOLOv8 downloads
