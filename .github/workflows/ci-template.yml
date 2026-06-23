@@ -36,7 +36,7 @@ jobs:
         with:
           args: >
             -Dsonar.organization=fitbuddy-ai-fitness
-            -Dsonar.projectKey=fitbuddy-ai-fitness_fitbuddy-app
+            -Dsonar.projectKey=FitBuddy-AI-Fitness_fitbuddy-app
             -Dsonar.qualitygate.wait=true
 
   snyk-security-scan:
