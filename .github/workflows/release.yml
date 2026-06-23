@@ -1,0 +1,301 @@
+name: Production Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+env:
+  ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+  ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+  ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+
+jobs:
+  build-auth-service:
+    name: Build auth-service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: docker build -t local/auth-service:latest services/auth-service
+
+      - name: Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: 'local/auth-service:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Azure Container Registry Login
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ env.ACR_USERNAME }}
+          password: ${{ env.ACR_PASSWORD }}
+
+      - name: Push to ACR
+        run: |
+          docker tag local/auth-service:latest ${{ env.ACR_LOGIN_SERVER }}/auth-service:${{ github.ref_name }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/auth-service:${{ github.ref_name }}
+
+  build-chatbot-service:
+    name: Build chatbot-service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: docker build -t local/chatbot-service:latest services/chatbot-service
+
+      - name: Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: 'local/chatbot-service:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Azure Container Registry Login
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ env.ACR_USERNAME }}
+          password: ${{ env.ACR_PASSWORD }}
+
+      - name: Push to ACR
+        run: |
+          docker tag local/chatbot-service:latest ${{ env.ACR_LOGIN_SERVER }}/chatbot-service:${{ github.ref_name }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/chatbot-service:${{ github.ref_name }}
+
+  build-diet-service:
+    name: Build diet-service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: docker build -t local/diet-service:latest services/diet-service
+
+      - name: Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: 'local/diet-service:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Azure Container Registry Login
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ env.ACR_USERNAME }}
+          password: ${{ env.ACR_PASSWORD }}
+
+      - name: Push to ACR
+        run: |
+          docker tag local/diet-service:latest ${{ env.ACR_LOGIN_SERVER }}/diet-service:${{ github.ref_name }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/diet-service:${{ github.ref_name }}
+
+  build-frontend:
+    name: Build frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: docker build -t local/frontend:latest frontend
+
+      - name: Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: 'local/frontend:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Azure Container Registry Login
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ env.ACR_USERNAME }}
+          password: ${{ env.ACR_PASSWORD }}
+
+      - name: Push to ACR
+        run: |
+          docker tag local/frontend:latest ${{ env.ACR_LOGIN_SERVER }}/frontend:${{ github.ref_name }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/frontend:${{ github.ref_name }}
+
+  build-progress-service:
+    name: Build progress-service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: docker build -t local/progress-service:latest services/progress-service
+
+      - name: Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: 'local/progress-service:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Azure Container Registry Login
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ env.ACR_USERNAME }}
+          password: ${{ env.ACR_PASSWORD }}
+
+      - name: Push to ACR
+        run: |
+          docker tag local/progress-service:latest ${{ env.ACR_LOGIN_SERVER }}/progress-service:${{ github.ref_name }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/progress-service:${{ github.ref_name }}
+
+  build-user-service:
+    name: Build user-service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: docker build -t local/user-service:latest services/user-service
+
+      - name: Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: 'local/user-service:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Azure Container Registry Login
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ env.ACR_USERNAME }}
+          password: ${{ env.ACR_PASSWORD }}
+
+      - name: Push to ACR
+        run: |
+          docker tag local/user-service:latest ${{ env.ACR_LOGIN_SERVER }}/user-service:${{ github.ref_name }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/user-service:${{ github.ref_name }}
+
+  build-workout-service:
+    name: Build workout-service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: docker build -t local/workout-service:latest services/workout-service
+
+      - name: Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: 'local/workout-service:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Azure Container Registry Login
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ env.ACR_USERNAME }}
+          password: ${{ env.ACR_PASSWORD }}
+
+      - name: Push to ACR
+        run: |
+          docker tag local/workout-service:latest ${{ env.ACR_LOGIN_SERVER }}/workout-service:${{ github.ref_name }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/workout-service:${{ github.ref_name }}
+
+  build-yolo-exercise-service:
+    name: Build yolo-exercise-service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: docker build -t local/yolo-exercise-service:latest services/yolo-exercise-service
+
+      - name: Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: 'local/yolo-exercise-service:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Azure Container Registry Login
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ env.ACR_USERNAME }}
+          password: ${{ env.ACR_PASSWORD }}
+
+      - name: Push to ACR
+        run: |
+          docker tag local/yolo-exercise-service:latest ${{ env.ACR_LOGIN_SERVER }}/yolo-exercise-service:${{ github.ref_name }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/yolo-exercise-service:${{ github.ref_name }}
+
+  update-gitops:
+    name: Update ArgoCD GitOps Repository (Prod)
+    needs: [build-auth-service, build-chatbot-service, build-diet-service, build-frontend, build-progress-service, build-user-service, build-workout-service, build-yolo-exercise-service]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitOps Repository
+        uses: actions/checkout@v4
+        with:
+          repository: FitBuddy-AI-Fitness/fitbuddy-argocd
+          token: ${{ secrets.GITOPS_PAT }}
+          path: gitops-repo
+
+      - name: Update Prod Values Files
+        run: |
+          cd gitops-repo
+          SERVICES="auth-service chatbot-service diet-service frontend progress-service user-service workout-service yolo-exercise-service"
+          for SERVICE in $SERVICES; do
+            echo "Updating prod image tag for $SERVICE to ${{ github.ref_name }}"
+            yq e -i ".image.tag = \"${{ github.ref_name }}\"" charts/$SERVICE/values-prod.yaml
+            git add charts/$SERVICE/values-prod.yaml
+          done
+          
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(gitops): release production image tags to ${{ github.ref_name }}" && git push origin main)
