@@ -120,8 +120,9 @@ jobs:
       - name: Push to ACR
         if: inputs.environment == 'dev'
         run: |
-          docker tag local/${{ inputs.service-name }}:latest ${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.service-name }}:${{ github.sha }}
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.service-name }}:${{ github.sha }}
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          docker tag local/${{ inputs.service-name }}:latest ${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.service-name }}:$SHORT_SHA
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/${{ inputs.service-name }}:$SHORT_SHA
 
   gitops-update:
     name: Update ArgoCD GitOps Repository (Dev)
@@ -140,7 +141,7 @@ jobs:
         run: |
           cd gitops-repo
           FILE="charts/${{ inputs.service-name }}/values-dev.yaml"
-          TAG="${{ github.sha }}"
+          TAG=$(echo "${{ github.sha }}" | cut -c1-7)
           
           yq e -i ".image.tag = \"$TAG\"" $FILE
           
