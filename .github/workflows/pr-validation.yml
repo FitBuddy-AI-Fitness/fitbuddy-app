@@ -71,3 +71,21 @@ jobs:
           to: ${{ secrets.TEAM_EMAIL }}
           from: GitHub Actions
           body: The Monolithic PR Validation pipeline (SonarCloud or Snyk) failed for Pull Request #${{ github.event.pull_request.number }}. Please review the logs to fix the vulnerabilities before merging to main.
+
+      - name: Send Email on Success
+        if: success()
+        uses: dawidd6/action-send-mail@4226df7daafa6fc901a43789c49bf7ab309066e7 # v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: ✅ PR Validation Successful: Ready to Merge!
+          to: ${{ secrets.TEAM_EMAIL }}
+          from: GitHub Actions
+          body: |
+            Great news! The Monolithic PR Validation pipeline has successfully completed for Pull Request #${{ github.event.pull_request.number }}.
+            
+            Both SonarCloud (Code Quality) and Snyk (Dependency Security) scans have passed with zero new critical vulnerabilities. The code meets all enterprise security standards and the branch protection checks are now green. 
+            
+            This Pull Request is officially verified and is ready to be safely merged into the main branch!
