@@ -2,7 +2,7 @@
 FROM node:20-bookworm-slim AS builder
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY package*.json tsconfig.json ./
+COPY package*.json tsconfig.json ./ 
 RUN npm ci --ignore-scripts
 COPY src ./src
 RUN npm run build
