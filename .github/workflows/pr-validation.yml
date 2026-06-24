@@ -37,7 +37,7 @@ jobs:
           node-version: 20
 
       - name: Install Snyk CLI
-        run: npm install -g snyk
+        run: npm install -g snyk@1.1292.1 --ignore-scripts
 
       - name: Authenticate Snyk
         env:
