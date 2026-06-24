@@ -37,7 +37,7 @@ jobs:
           node-version: 20
 
       - name: Install Snyk CLI
-        run: npm install -g snyk
+        run: npm install -g snyk@1.1292.1 --ignore-scripts
 
       - name: Authenticate Snyk
         env:
@@ -80,7 +80,7 @@ jobs:
           server_port: ${{ secrets.SMTP_PORT }}
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
-          subject: ✅ PR Validation Successful: Ready to Merge!
+          subject: "✅ PR Validation Successful: Ready to Merge!"
           to: ${{ secrets.TEAM_EMAIL }}
           from: GitHub Actions
           body: |
