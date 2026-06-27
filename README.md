@@ -8,7 +8,9 @@ FitBuddy is an enterprise-grade, microservices-based AI fitness platform. It fea
 
 The platform runs on **Azure Kubernetes Service (AKS)** and leverages Azure PaaS for data and AI.
 
-![Application Architecture](docs/architecture.png)
+![Azure Infrastructure Architecture](docs/Azure%20Architecture%20Final%20FitBuddy.png)
+
+![Azure Application Architecture](docs/Azure%20Application%20Architecture%20FitBuddy.png)
 
 ---
 
@@ -34,7 +36,7 @@ For local development, all services run on dedicated ports:
 
 FitBuddy uses a modern **GitOps** deployment strategy powered by GitHub Actions and ArgoCD.
 
-![CI/CD Pipeline Architecture](docs/cicd-pipeline.png)
+![CI/CD Pipeline Architecture](docs/Azure%20CI%20%26%20CD%20Architecture%20FitBuddy.png)
 
 ---
 
