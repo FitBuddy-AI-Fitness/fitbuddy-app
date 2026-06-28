@@ -1,19 +1,29 @@
-# BodyGPT - Enterprise AI Fitness Platform
+# FitBuddy AI Fitness Platform
 
-BodyGPT is a production-grade, containerized fitness application utilizing a microservices architecture. It supports AI-powered workouts, diets, RAG chatbots, OpenCV joint angle exercise tracking, food recognition, and laboratory reports parsing.
+FitBuddy is an enterprise-grade, microservices-based AI fitness platform. It features AI-powered workout plans, personalized nutrition coaching, RAG-based AI chatbots, OpenCV exercise tracking, and comprehensive health monitoring.
 
 ---
 
-## Service Architecture & Port Mappings
+## 🏗 Application Architecture
 
-All endpoints consolidate under an Azure Front Door and Application Gateway Ingress Controller (AGIC) in production, but route to individual ports in local testing:
+The platform runs on **Azure Kubernetes Service (AKS)** and leverages Azure PaaS for data and AI.
+
+![Azure Infrastructure Architecture](docs/Azure%20Architecture%20Final%20FitBuddy.png)
+
+![Azure Application Architecture](docs/Azure%20Application%20Architecture%20FitBuddy.png)
+
+---
+
+## ⚙️ Service Architecture & Port Mappings
+
+For local development, all services run on dedicated ports:
 
 | Service | Port | Technology | Primary Responsibility |
 | --- | --- | --- | --- |
 | **Frontend** | `8080` / `8` | React, TS, Tailwind CSS | UI Client Interface |
-| **Auth Service** | `5001` | Node, Express, TS, BCrypt, JWT | Register, login, OTP dispatches |
+| **Auth Service** | `5001` | Node, Express, TS, BCrypt, JWT | Register, login, authentication |
 | **User Service** | `5002` | Node, Express, TS | Profiles and Goals management |
-| **Diet Service** | `5003` | Node, Express, TS, AI Foundry | Calorie budgets, macro splits, meal swaps |
+| **Diet Service** | `5003` | Node, Express, TS, AI Foundry | Calorie budgets, macro splits, meal plans |
 | **Workout Service** | `5004` | Node, Express, TS, AI Foundry | Personalized Home/Gym exercises builder |
 | **Chatbot Service** | `5005` | Node, Express, TS, AI Search | AI coach chat loops & vector searches |
 | **Progress Service** | `5006` | Node, Express, TS | Weight trackers, BMIs, prediction milestones |
@@ -22,7 +32,15 @@ All endpoints consolidate under an Azure Front Door and Application Gateway Ingr
 
 ---
 
-## Local Orchestration (Docker Compose)
+## 🚀 CI/CD Pipeline (GitOps)
+
+FitBuddy uses a modern **GitOps** deployment strategy powered by GitHub Actions and ArgoCD.
+
+![CI/CD Pipeline Architecture](docs/Azure%20CI%20%26%20CD%20Architecture%20FitBuddy.png)
+
+---
+
+## 💻 Local Development
 
 Launch the entire stack (including local MongoDB) using Docker Compose:
 
@@ -30,38 +48,14 @@ Launch the entire stack (including local MongoDB) using Docker Compose:
 # Build and run all containers
 docker-compose up --build
 ```
-
 Access the UI at [http://localhost:8080](http://localhost:8080).
 
 ---
 
-## Deployment to Azure Kubernetes Service (AKS)
+## ☁️ Cloud Deployment Steps
 
-1. **Push Images to Azure Container Registry (ACR):**
-   ```bash
-   az acr login --name bodygptacr
-   docker tag bodygpt-auth-service bodygptacr.azurecr.io/auth-service:latest
-   docker push bodygptacr.azurecr.io/auth-service:latest
-   # (Repeat for other services)
-   ```
+The infrastructure is fully automated via Terraform (see the `fitbuddy-terraform` repository).
 
-2. **Apply Kubernetes Manifests:**
-   ```bash
-   # Apply global secrets & configs
-   kubectl apply -f k8s/secrets.yaml
-   kubectl apply -f k8s/configmap.yaml
-
-   # Apply services deployment & HPAs
-   kubectl apply -f k8s/auth-service.yaml
-   kubectl apply -f k8s/user-service.yaml
-   kubectl apply -f k8s/diet-service.yaml
-   kubectl apply -f k8s/workout-service.yaml
-   kubectl apply -f k8s/chatbot-service.yaml
-   kubectl apply -f k8s/progress-service.yaml
-   kubectl apply -f k8s/yolo-exercise-service.yaml
-   kubectl apply -f k8s/food-recognition-service.yaml
-   kubectl apply -f k8s/frontend.yaml
-
-   # Apply path-based routing rules (AGIC Ingress)
-   kubectl apply -f k8s/ingress.yaml
-   ```
+1. **Infrastructure:** The Hub & Spoke architecture, AKS cluster, Azure Cosmos DB, OpenAI, and Key Vault are provisioned using GitHub Actions in the Terraform repo.
+2. **Application Build:** Any push to the `main` branch of this repository triggers a GitHub Action to build and push Docker images to Azure Container Registry (ACR).
+3. **Deployment:** ArgoCD (running inside AKS) watches the `fitbuddy-argocd` repository and automatically synchronizes the new image tags to the live cluster.

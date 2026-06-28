@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IUser extends Document {
   email: string;
   passwordHash: string;
-  isVerified: boolean;
+  isVerified: boolean; 
   otp?: string;
   otpExpires?: Date;
   refreshToken?: string;
