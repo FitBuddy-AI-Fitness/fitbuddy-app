@@ -39,10 +39,7 @@ jobs:
       - name: Install Snyk CLI
         run: npm install -g snyk@1.1292.1 --ignore-scripts
 
-      - name: Authenticate Snyk
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk auth $SNYK_TOKEN
+
 
       - name: Snyk Dependency Scan
         env:
