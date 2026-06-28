@@ -2,7 +2,7 @@
   "name": "progress-service",
   "version": "1.0.0",
   "description": "BodyGPT Progress Service",
-  "main": "dist/index.js",
+  "main": "dist/index.js", 
   "type": "module",
   "scripts": {
     "build": "tsc",
